@@ -43,7 +43,7 @@ def wrap_method(
             experiment_type, results_directory, log_level
         )
 
-    dump_args(args, experiments_dir, f"{experiment_type}_args.json")
+    # dump_args(args, experiments_dir, f"{experiment_type}_args.json")
 
     # Dump metrics to disk if any error is detected
     exception = None

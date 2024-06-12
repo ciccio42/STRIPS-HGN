@@ -4,7 +4,9 @@ import logging
 import os
 from shutil import copyfile
 from typing import List, Optional, Tuple
-
+import random
+import numpy as np
+import torch
 from torch.utils.data import DataLoader
 
 from strips_hgn.models.strips_hgn import STRIPSHGN
@@ -171,5 +173,21 @@ def train_wrapper(args: TrainingArgs):
     )
 
 
+def seed_everything(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
 if __name__ == "__main__":
+    # import debugpy
+    # debugpy.listen(('0.0.0.0', 5678))
+    # print("Waiting for debugger attach")
+    # debugpy.wait_for_client()
+    # seed_everything(seed=42)
+
     train_wrapper(args=parse_and_validate_training_args())

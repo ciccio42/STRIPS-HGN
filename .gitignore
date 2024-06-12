@@ -4,3 +4,4 @@ __pycache__
 # Fast downward and results directory
 fast_downward/
 results/
+strips_hgn.egg-info/

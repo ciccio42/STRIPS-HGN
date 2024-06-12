@@ -1,7 +1,9 @@
 import json
 from collections import namedtuple
 from typing import FrozenSet, Type
-
+import numpy as np
+import os
+import random
 import torch
 
 from hypergraph_nets.hypergraphs import HypergraphsTuple
@@ -125,12 +127,12 @@ def eval_demo(
     # 2. Use the STRIPSHGNHeuristic wrapper
 
     # Option 1: Call the STRIPSHGN directly with a HypergraphsTuple
-    input_h_tuple = state_to_input_h_tup(problem.initial_state)
-    output_h_tuple = model(input_h_tuple, num_steps)
-    assert len(output_h_tuple) == 1
+    # input_h_tuple = state_to_input_h_tup(problem.initial_state)
+    # output_h_tuple = model(input_h_tuple, num_steps)
+    # assert len(output_h_tuple) == 1
 
-    heuristic_val = output_h_tuple[0].globals.item()
-    print(f"STRIPSHGN h(s_0) = {heuristic_val}")
+    # heuristic_val = output_h_tuple[0].globals.item()
+    # print(f"STRIPSHGN h(s_0) = {heuristic_val}")
 
     # Option 2: Use the STRIPSHGNHeuristic wrapper
     # Create a STRIPS-HGN heuristic
@@ -149,9 +151,26 @@ def eval_demo(
     print(f"STRIPSHGNHeuristic h(s_0) = {heuristic_val}")
 
 
+def seed_everything(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
 if __name__ == "__main__":
+    import debugpy
+
+    debugpy.listen(('0.0.0.0', 5678))
+    print("Waiting for debugger attach")
+    debugpy.wait_for_client()
+    seed_everything(seed=42)
+
     eval_demo(
-        domain_pddl="../benchmarks/blocks-slaney/domain.pddl",
-        problem_pddl="../benchmarks/blocks-slaney/blocks10/task01.pddl",
-        checkpoint="../results/blocksworld-example-new.ckpt",
+        domain_pddl="/raid/home/frosa_Loc/period_abroad/heuristic-computation/STRIPS-HGN/benchmarks/blocks-slaney/domain.pddl",
+        problem_pddl="/raid/home/frosa_Loc/period_abroad/heuristic-computation/STRIPS-HGN/benchmarks/blocks-slaney/blocks3/task01.pddl",
+        checkpoint="/raid/home/frosa_Loc/period_abroad/heuristic-computation/STRIPS-HGN/results/train-strips-hgn-2024-06-11T15:37:47.921910/model-best.ckpt",
     )

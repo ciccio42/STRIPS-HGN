@@ -57,4 +57,11 @@ def eval_wrapper(args: EvaluationArgs):
 
 
 if __name__ == "__main__":
+
+    import debugpy
+
+    debugpy.listen(('0.0.0.0', 5678))
+    print("Waiting for debugger attach")
+    debugpy.wait_for_client()
+
     eval_wrapper(args=parse_and_validate_evaluation_args())
