@@ -30,7 +30,8 @@ def _unsorted_segment_helper(
         assert repeated_data.shape[0] == indices.shape[0]
 
     # Placeholder for the segments
-    segments = torch.zeros((num_segments, repeated_data.shape[1]))
+    segments = torch.zeros(
+        (num_segments, repeated_data.shape[1])).to(repeated_data.get_device())
     return repeated_data, indices, segments
 
 

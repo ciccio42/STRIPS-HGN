@@ -29,7 +29,7 @@ DEFAULT_ARGS = {
     # TODO: play around with this parameter - bumped to very high for now
     "patience": 999999,
     # Others
-    "debug": True,
+    "debug": False,
     "remove_duplicates": False,
     "shuffle": True,
 }

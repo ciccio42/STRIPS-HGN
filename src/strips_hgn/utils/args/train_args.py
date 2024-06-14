@@ -73,6 +73,11 @@ class TrainingArgs(BaseArgs):
     max_epochs: int
     patience: int
 
+    compute_state_value_pair: bool
+    train_folder: str
+    device: int
+    workers: int
+
     def validate(self):
         super().validate()
         assert len(self.problems) > 0, "Must be at least 1 problem"
@@ -217,6 +222,27 @@ def _get_training_parser(show_defaults=True):
         help="Early stopping patience - number of epochs for which validation "
         "loss stops decreasing in order to stop training",
     )
+
+    parser.add_argument(
+        "--compute_state_value_pair",
+        action='store_true',
+        help="Whether compute the state_value pair or no"
+    )
+
+    parser.add_argument(
+        "--train_folder",
+        type=str,
+        default="/raid/home/frosa_Loc/period_abroad/heuristic-computation/baseline_evaluation/blocks_world/easy")
+
+    parser.add_argument(
+        "--device",
+        type=int,
+        default=1)
+
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=8)
 
     return parser
 

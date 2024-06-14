@@ -1,7 +1,11 @@
 import logging
 from typing import Dict, List, Tuple, Type
-
+import os
+import glob
 from torch.utils.data import DataLoader
+import pickle
+from tqdm import tqdm
+
 
 from strips_hgn.config import (
     DEFAULT_DOMAIN_TO_MIN_SAMPLES,
@@ -51,6 +55,9 @@ class KFoldTrainingDataWorkflow(BaseTrainingDataWorkflow):
         node_feature_mapper_cls: Type[NodeFeatureMapper],
         hyperedge_feature_mapper_cls: Type[HyperedgeFeatureMapper],
         experiment_dir: str,
+        compute_state_value_pairs: bool,
+        train_folder: str,
+        workers: int
     ):
         """
         Parameters
@@ -81,8 +88,11 @@ class KFoldTrainingDataWorkflow(BaseTrainingDataWorkflow):
         self._num_bins = num_bins
         self._remove_duplicates = remove_duplicates
         self._shuffle = shuffle
+        self._compute_state_value_pairs = compute_state_value_pairs
+        self._train_folder = train_folder
+        self._workers = workers
 
-    @timed("KFoldTrainingDataWorkflow.GenerateTrainingDataTime")
+    # @timed("KFoldTrainingDataWorkflow.GenerateTrainingDataTime")
     def _generate_kfold_training_data(
         self,
     ) -> List[Tuple[List[TrainingPair], List[TrainingPair]]]:
@@ -97,10 +107,27 @@ class KFoldTrainingDataWorkflow(BaseTrainingDataWorkflow):
         and the 2nd element of the tuple is the validation state-value pairs
         for the given fold.
         """
-        # 1. Generate optimal state-value pairs for all problems
-        problem_to_state_value_pairs = generate_optimal_state_value_pairs(
-            self._problems
-        )
+        if self._compute_state_value_pairs:
+            # 1. Generate optimal state-value pairs for all problems
+            problem_to_state_value_pairs = generate_optimal_state_value_pairs(
+                self._problems
+            )
+        else:
+            # 1. Load pre-computed state-value pair
+            problem_to_state_value_pairs = dict()
+            # remove files not in training
+            for problem in self._problems:
+                problem_name = problem.problem_pddl.split(
+                    '/')[-1].split('.')[0]
+                problem_complexity = problem.problem_pddl.split('/')[-2]
+                # state-value pair
+                pkl_file_path = os.path.join(self._train_folder,
+                                             problem_complexity,
+                                             "state_value",
+                                             f"{problem_name}.pkl")
+                with open(pkl_file_path, 'rb') as file:
+                    problem_to_state_value_pairs[problem] = pickle.load(
+                        file)
 
         # 2. Merge state-value pairs by domain
         domain_to_training_pairs = merge_state_value_pairs_by_domain(
@@ -119,15 +146,15 @@ class KFoldTrainingDataWorkflow(BaseTrainingDataWorkflow):
         )
 
         # 4. Save training data to the experiments directory
-        save_training_data(
-            self._experiments_dir,
-            domain_to_training_pairs,
-            kfold_training_data,
-            indent=2,
-        )
+        # save_training_data(
+        #     self._experiments_dir,
+        #     domain_to_training_pairs,
+        #     kfold_training_data,
+        #     indent=2,
+        # )
         return kfold_training_data
 
-    @timed("KFoldTrainingDataWorkflow.ConvertToHypergraphsTupleTime")
+    # @ timed("KFoldTrainingDataWorkflow.ConvertToHypergraphsTupleTime")
     def _generate_hypergraphs_tuple_datasets(
         self,
         kfold_training_data: List[
@@ -150,12 +177,28 @@ class KFoldTrainingDataWorkflow(BaseTrainingDataWorkflow):
         validation set, respectively.
         """
         # Generate the delete-relaxation hypergraph view of the problems
-        problem_to_delete_relaxation_hypergraph: Dict[
-            STRIPSProblem, DeleteRelaxationHypergraphView
-        ] = {
-            problem: DeleteRelaxationHypergraphView(problem)
-            for problem in self._problems
-        }
+        problem_to_delete_relaxation_hypergraph = {}
+
+        for problem in tqdm(self._problems, desc="Delete Relaxation Hypergraph"):
+            problem_path = problem.problem_pddl
+            folder_path = problem_path.split('/task')[0]
+            problem_name = problem.problem_pddl.split('/')[-1].split('.')[0]
+            del_relaxation_path = os.path.join(
+                folder_path, "delete_relaxation")
+            os.makedirs(del_relaxation_path, exist_ok=True)
+            delete_relaxation_path = os.path.join(
+                del_relaxation_path, f"{problem_name}.pkl")
+
+            if not os.path.exists(delete_relaxation_path):
+                hypergraph_view = DeleteRelaxationHypergraphView(
+                    problem)
+                with open(delete_relaxation_path, 'wb') as f:
+                    pickle.dump(hypergraph_view, f)
+            else:
+                with open(delete_relaxation_path, 'rb') as f:
+                    hypergraph_view = pickle.load(f)
+                    hypergraph_view.problem = problem
+            problem_to_delete_relaxation_hypergraph[problem] = hypergraph_view
 
         kfold_hypergraphs_tuples = [
             (
@@ -210,7 +253,7 @@ class KFoldTrainingDataWorkflow(BaseTrainingDataWorkflow):
         )
         return kfold_datasets
 
-    @timed("KFoldTrainingDataWorkflow.TotalTime")
+    # @timed("KFoldTrainingDataWorkflow.TotalTime")
     def run(self) -> List[Tuple[DataLoader, DataLoader]]:
         # Generate optimal training data
         kfold_training_data = self._generate_kfold_training_data()
@@ -222,6 +265,8 @@ class KFoldTrainingDataWorkflow(BaseTrainingDataWorkflow):
 
         # Convert to torch DataLoaders
         kfold_dataloaders = create_dataloaders(
-            kfold_datasets, batch_size=self._batch_size
+            kfold_datasets,
+            batch_size=self._batch_size,
+            workers=self._workers
         )
         return kfold_dataloaders

@@ -6,6 +6,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
+import torch
 
 from strips_hgn.models.strips_hgn import STRIPSHGN
 from strips_hgn.torch_utils.lightning_callbacks import (
@@ -32,6 +33,7 @@ class TrainSTRIPSHGNWorkflow(object):
         prefix: str,
         early_stopping_patience: int = 10,
         fast_dev_run: bool = False,
+        device: int = 0
     ):
         # Set model to training mode
         strips_hgn.train()
@@ -72,6 +74,8 @@ class TrainSTRIPSHGNWorkflow(object):
             logger=self._logger,
             weights_summary="full",
             fast_dev_run=fast_dev_run,
+            gpus=1,
+            devices=device
         )
 
         # Whether network has already been trained
@@ -112,8 +116,8 @@ class TrainSTRIPSHGNWorkflow(object):
             for filepath, val_loss in self._model_checkpoint_callback.best_k_models.items()
             if val_loss == self.best_val_loss
         ]
-        if len(filepath) > 1:
-            raise RuntimeError("Found 2 checkpoints for best val loss?")
+        # if len(filepath) > 1:
+        #     raise RuntimeError("Found 2 checkpoints for best val loss?")
 
         return filepath[0] if filepath else None
 

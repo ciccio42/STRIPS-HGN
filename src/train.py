@@ -73,6 +73,9 @@ def train_main(args: TrainingArgs, experiments_dir: str):
         node_feature_mapper_cls=args.node_feature_mapper_cls,
         hyperedge_feature_mapper_cls=args.hyperedge_feature_mapper_cls,
         experiment_dir=experiments_dir,
+        compute_state_value_pairs=args.compute_state_value_pair,
+        train_folder=args.train_folder,
+        workers=args.workers
     )
     kfold_dataloaders: List[
         Tuple[DataLoader, DataLoader]
@@ -105,9 +108,11 @@ def train_main(args: TrainingArgs, experiments_dir: str):
             "RunFoldTrainingTime", context={"fold_idx": fold_idx}
         ).start()
 
+        os.environ['CUDA_VISIBLE_DEVICES'] = f"{args.device}"
+        device = torch.device('cuda:0')
         # Create training workflow and run
         current_train_wf = TrainSTRIPSHGNWorkflow(
-            strips_hgn=STRIPSHGN(hparams=strips_hgn_hparams),
+            strips_hgn=STRIPSHGN(hparams=strips_hgn_hparams).to(device),
             max_training_time=args.max_training_time,
             max_num_epochs=args.max_epochs,
             train_dataloader=train_dataloader,
@@ -115,6 +120,7 @@ def train_main(args: TrainingArgs, experiments_dir: str):
             experiments_dir=experiments_dir,
             prefix=f"fold_{fold_idx}",
             early_stopping_patience=args.patience,
+            device=0
         )
         current_train_wf.run()
 
@@ -184,10 +190,10 @@ def seed_everything(seed=42):
 
 
 if __name__ == "__main__":
-    # import debugpy
-    # debugpy.listen(('0.0.0.0', 5678))
-    # print("Waiting for debugger attach")
-    # debugpy.wait_for_client()
-    # seed_everything(seed=42)
+    import debugpy
+    debugpy.listen(('0.0.0.0', 5678))
+    print("Waiting for debugger attach")
+    debugpy.wait_for_client()
+    seed_everything(seed=42)
 
     train_wrapper(args=parse_and_validate_training_args())

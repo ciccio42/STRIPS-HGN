@@ -71,6 +71,7 @@ def create_dataloaders(
         Tuple[HypergraphsTupleDataset, HypergraphsTupleDataset]
     ],
     batch_size: int = 1,
+    workers: int = 8
 ) -> List[Tuple[DataLoader, DataLoader]]:
     """
     Create the PyTorch dataloaders given the k-fold datasets
@@ -103,6 +104,7 @@ def create_dataloaders(
                     sampler=RandomSampler(train_dataset, replacement=False),
                     batch_size=batch_size,
                     collate_fn=_collate_hypergraphs_tuples,
+                    num_workers=workers
                 ),
                 # Validation dataloader, no need for random sampling
                 DataLoader(
@@ -110,6 +112,7 @@ def create_dataloaders(
                     sampler=SequentialSampler(val_dataset),
                     batch_size=batch_size,
                     collate_fn=_collate_hypergraphs_tuples,
+                    num_workers=workers
                 ),
             )
         )
