@@ -25,8 +25,12 @@ class EdgesToGlobalsAggregator(nn.Module):
         self._reducer = reducer
 
     def forward(self, hypergraph: HypergraphsTuple):
-        graph_index = torch.arange(
-            hypergraph.num_hypergraphs).to(hypergraph.n_edge.get_device())
+        if hypergraph.n_edge.get_device() != -1:
+            graph_index = torch.arange(
+                hypergraph.num_hypergraphs).to(hypergraph.n_edge.get_device())
+        else:
+            graph_index = torch.arange(
+                hypergraph.num_hypergraphs)
         indices = graph_index.repeat_interleave(hypergraph.n_edge, dim=0)
         return self._reducer(
             hypergraph.edges, indices, hypergraph.num_hypergraphs
@@ -41,8 +45,12 @@ class NodesToGlobalsAggregator(nn.Module):
         self._reducer = reducer
 
     def forward(self, hypergraph: HypergraphsTuple):
-        graph_index = torch.arange(
-            hypergraph.num_hypergraphs).to(hypergraph.n_node.get_device())
+        if hypergraph.n_node.get_device() != -1:
+            graph_index = torch.arange(
+                hypergraph.num_hypergraphs).to(hypergraph.n_node.get_device())
+        else:
+            graph_index = torch.arange(
+                hypergraph.num_hypergraphs)
         indices = graph_index.repeat_interleave(hypergraph.n_node, dim=0)
         return self._reducer(
             hypergraph.nodes, indices, hypergraph.num_hypergraphs

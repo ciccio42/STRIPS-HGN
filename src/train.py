@@ -46,7 +46,7 @@ def _copy_best_model(train_workflow: TrainSTRIPSHGNWorkflow):
     return dest_filename
 
 
-@timed("TrainingDriverMethodTime")
+# @timed("TrainingDriverMethodTime")
 def train_main(args: TrainingArgs, experiments_dir: str):
     """
     Main runner method.

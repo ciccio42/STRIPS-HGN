@@ -42,7 +42,7 @@ class DeleteRelaxationHypergraphView(HypergraphView):
             hyperedge: idx for idx, hyperedge in enumerate(self._hyperedges)
         }
 
-        self.plot_delete_relaxation_hypergraph_view()
+        # self.plot_delete_relaxation_hypergraph_view()
 
     @property
     def nodes(self) -> List[Node]:

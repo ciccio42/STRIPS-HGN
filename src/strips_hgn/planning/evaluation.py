@@ -65,14 +65,16 @@ def evaluate_problem_with_pyperplan(
 
     # Run the search for each non-learned heuristic + STRIPS-HGN heuristic
     for heuristic in (*heuristics, strips_hgn_heuristic):
-        _log.info(f"Running {search_algorithm} + {heuristic} with pyperplan")
-        _, metrics = pyperplan_api.find_solution(
-            task=task,
-            heuristic=heuristic.to_pyperplan(task),
-            search_algo=pyperplan_search_algorithm,
-            max_search_time=max_search_time,
-        )
-        heuristic_to_metrics[heuristic] = metrics
+        if heuristic is not None:
+            _log.info(
+                f"Running {search_algorithm} + {heuristic} with pyperplan")
+            _, metrics = pyperplan_api.find_solution(
+                task=task,
+                heuristic=heuristic.to_pyperplan(task),
+                search_algo=pyperplan_search_algorithm,
+                max_search_time=max_search_time,
+            )
+            heuristic_to_metrics[heuristic] = metrics
 
     # Sanity check
     assert all(heuristic in heuristic_to_metrics for heuristic in heuristics)

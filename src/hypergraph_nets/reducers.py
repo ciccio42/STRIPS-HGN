@@ -15,7 +15,10 @@ def _unsorted_segment_helper(
     else:
         # FIXME: Bad hack, -1 indicates we're using zero padding, so ignore those nodes
         # Repeat Data Tensor depending on number of segment_ids for that idx that are not -1
-        repeats = torch.sum(segment_ids != -1, dim=1)
+        if data.get_device() != -1:
+            repeats = torch.sum(segment_ids != -1, dim=1).to(data.get_device())
+        else:
+            repeats = torch.sum(segment_ids != -1, dim=1)
 
         # TODO: which one is better???
         repeated_data = data.repeat_interleave(repeats, dim=0)
@@ -30,13 +33,19 @@ def _unsorted_segment_helper(
         assert repeated_data.shape[0] == indices.shape[0]
 
     # Placeholder for the segments
-    segments = torch.zeros(
-        (num_segments, repeated_data.shape[1])).to(repeated_data.get_device())
+    if repeated_data.get_device() != -1:
+        segments = torch.zeros(
+            (num_segments, repeated_data.shape[1])).to(repeated_data.get_device())
+    else:
+        segments = torch.zeros(
+            (num_segments, repeated_data.shape[1]))
     return repeated_data, indices, segments
 
 
 def torch_unsorted_segment_sum(
     data: torch.Tensor, segment_ids: torch.Tensor, num_segments
+
+
 ):
     """
     Compute sums along segments of a Tensor
@@ -48,6 +57,8 @@ def torch_unsorted_segment_sum(
     )
 
     # Do the summation, i.e. sum by index
+    if data.get_device() != -1:
+        indices = indices.to(data.get_device())
     sum_results = segments.index_add(0, indices, repeated_data)
     return sum_results
 

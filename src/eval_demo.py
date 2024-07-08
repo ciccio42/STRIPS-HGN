@@ -127,12 +127,12 @@ def eval_demo(
     # 2. Use the STRIPSHGNHeuristic wrapper
 
     # Option 1: Call the STRIPSHGN directly with a HypergraphsTuple
-    # input_h_tuple = state_to_input_h_tup(problem.initial_state)
-    # output_h_tuple = model(input_h_tuple, num_steps)
-    # assert len(output_h_tuple) == 1
+    input_h_tuple = state_to_input_h_tup(problem.initial_state)
+    output_h_tuple = model(input_h_tuple, num_steps)
+    assert len(output_h_tuple) == 1
 
-    # heuristic_val = output_h_tuple[0].globals.item()
-    # print(f"STRIPSHGN h(s_0) = {heuristic_val}")
+    heuristic_val = output_h_tuple[0].globals.item()
+    print(f"STRIPSHGN h(s_0) = {heuristic_val}")
 
     # Option 2: Use the STRIPSHGNHeuristic wrapper
     # Create a STRIPS-HGN heuristic
